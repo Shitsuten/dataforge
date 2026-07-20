@@ -9,7 +9,8 @@ from enum import Enum
 
 import anthropic
 
-from .context import CodeContext, DataHubClient, MockDataHubClient
+from .context import DataHubClient, MockDataHubClient
+from .mcp_context import DataHubMCPClient
 from .prompts import (
     DBT_MODEL_PROMPT,
     PYTHON_ETL_PROMPT,
@@ -42,9 +43,12 @@ class DataForgeAgent:
         anthropic_key: str | None = None,
         model: str = "claude-sonnet-4-20250514",
         use_mock: bool = False,
+        use_mcp: bool = False,
     ):
         if use_mock or not datahub_url:
             self.datahub = MockDataHubClient()
+        elif use_mcp:
+            self.datahub = DataHubMCPClient(datahub_url, datahub_token)
         else:
             self.datahub = DataHubClient(datahub_url, datahub_token)
 
@@ -95,7 +99,7 @@ class DataForgeAgent:
         if output_type == OutputType.DBT:
             model_name = parsed.get("model_name", "generated_model")
             files[f"models/marts/{model_name}.sql"] = parsed.get("model_sql", "")
-            files[f"models/marts/schema.yml"] = parsed.get("schema_yml", "")
+            files["models/marts/schema.yml"] = parsed.get("schema_yml", "")
             description = f"dbt model: {model_name}"
 
         elif output_type == OutputType.SQL:
