@@ -1,0 +1,49 @@
+version: 2
+
+models:
+  - name: customer_segments
+    description: >
+      Customer segmentation model combining Shopify order history with Stripe
+      payment data. Classifies customers as VIP/Regular/One-time/Inactive based
+      on spend and order frequency. PII is masked — only hashed identifiers exposed.
+    meta:
+      datahub_sources:
+        - raw.stripe.payments
+        - raw.stripe.customers
+        - raw.shopify.orders
+      generated_by: dataforge
+      pii_handling: customer_email hashed via MD5
+    columns:
+      - name: customer_hash
+        description: MD5 hash of customer email (PII masked)
+        tests:
+          - not_null
+          - unique
+      - name: total_orders
+        description: Lifetime order count
+        tests:
+          - not_null
+      - name: total_spend
+        description: Lifetime spend in shop currency
+        tests:
+          - not_null
+      - name: first_order_date
+        description: Date of first order
+      - name: last_order_date
+        description: Date of most recent order
+      - name: customer_tenure_days
+        description: Days between first and last order
+      - name: customer_segment
+        description: "Segment classification: VIP, Regular, One-time, or Inactive"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['VIP', 'Regular', 'One-time', 'Inactive']
+      - name: activity_status
+        description: "Recency-based status: Active (30d), At Risk (90d), or Churned"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Active', 'At Risk', 'Churned']
+      - name: refund_rate
+        description: Ratio of refunded to total paid amount (0-1)
